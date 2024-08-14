@@ -3,6 +3,8 @@ use std::fs;
 use anyhow::Result;
 use clap::Parser;
 
+use crate::scanner::Scanner;
+
 #[derive(Parser)]
 #[command(name = "rLox")]
 #[command(version = "1.0")]
@@ -37,14 +39,10 @@ impl RLox {
     }
 
     fn run(input: String) {
-        let tokens = Self::scan_tokens(input);
-        for token in tokens {
+        let mut scanner = Scanner::new(input);
+        scanner.scan_tokens();
+        for token in scanner.tokens {
             dbg!(token);
         }
-    }
-
-    fn scan_tokens(input: String) -> Result<()> {
-        
-        Ok(())
     }
 }

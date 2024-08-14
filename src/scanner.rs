@@ -1,25 +1,39 @@
 use crate::tokens::{Token, TokenType};
 
 pub struct Scanner {
-    start: u64,
-    current: u64,
-    line: u64,
-    source: String,
-    tokens: Vec<Token>,
+    pub start: u64,
+    pub current: u64,
+    pub line: u64,
+    pub source: String,
+    pub tokens: Vec<Token>,
 }
 
 impl Scanner {
+    pub fn new(source: String) -> Self {
+        Self {
+            start: 0,
+            current: 0,
+            line: 0,
+            source,
+            tokens: vec![],
+        }
+    }
+
     fn is_at_end(&self) -> bool {
         self.source.len() <= self.current as usize
     }
 
-    pub fn advance(&mut self) -> char {
+    fn advance(&mut self) -> Option<char> {
         self.current += 1;
-        self.source.chars().nth(self.current as usize).unwrap()
+        self.source.chars().nth(self.current as usize)
     }
 
-    pub fn scan_token(&mut self) {
-        let character = self.advance();
+    fn scan_token(&mut self) {
+        let character = if let Some(character_unwrapped) = self.advance() {
+            character_unwrapped
+        } else {
+            return;
+        };
         let token_type = match character {
             '(' => TokenType::LeftParen,
             ')' => TokenType::RightParen,
