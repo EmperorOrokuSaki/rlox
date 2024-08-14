@@ -1,16 +1,11 @@
+mod rlox;
+mod tokens;
+
+use anyhow::Result;
 use clap::Parser;
+use rlox::RLox;
 
-#[derive(Parser)]
-#[command(name = "rLox")]
-#[command(version = "1.0")]
-#[command(about = "A Lox compiler written in Rust", long_about = None)]
-struct Cli {
-    #[arg(long)]
-    path: String,
-}
-
-fn main() {
-    let cli = Cli::parse();
-
-    println!("two: {:?}", cli.path);
+fn main() -> Result<()> {
+    let rlox = RLox::parse();
+    rlox.init()
 }
