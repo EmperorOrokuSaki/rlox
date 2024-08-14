@@ -1,19 +1,19 @@
 pub struct Token {
-    token_type: TokenType,
-    lexeme: String,
-    literal: String,
-    line: u64,
+    pub token_type: TokenType,
+    pub lexeme: String,
+    pub literal: Option<String>,
+    pub line: u64,
 }
 
 impl Token {
     /// Returns type + lexeme + literal
-    pub fn as_string(self) -> String {
-        format!("{:?} {} {}", self.token_type, self.lexeme, self.literal)
+    pub fn as_string(&self) -> String {
+        format!("{:?} {} {}", self.token_type, self.lexeme, self.literal.clone().unwrap_or("".to_string()))
     }
 }
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum TokenType {
+pub enum TokenType {
     // Single-character tokens.
     LeftParen,
     RightParen,
