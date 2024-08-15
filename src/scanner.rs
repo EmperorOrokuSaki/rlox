@@ -1,5 +1,5 @@
-use std::str::Chars;
 use std::iter::Peekable;
+use std::str::Chars;
 
 use crate::errors::rlox_error;
 use crate::tokens::{Token, TokenType};
@@ -15,7 +15,9 @@ pub struct Scanner {
 
 impl Scanner {
     pub fn new(source: String) -> Self {
-        let chars = Box::leak(source.clone().into_boxed_str()).chars().peekable();
+        let chars = Box::leak(source.clone().into_boxed_str())
+            .chars()
+            .peekable();
         Self {
             start: 0,
             current: 0,
@@ -45,8 +47,72 @@ impl Scanner {
         false
     }
 
+    /// Returns the character that is one index ahead
+    /// Use .peek() to look at the next character without advancing
     fn peek(&mut self) -> Option<char> {
-        self.chars.peek().copied() // Use .peek() to look at the next character without advancing
+        self.chars.peek().copied()
+    }
+
+    // Returns the character that is two indexes ahead
+    /// Use .peek() to look at the second next character without advancing
+    fn peek_next(&mut self) -> Option<char> {
+        let mut cloned_chars = self.chars.clone();
+        cloned_chars.next();
+        cloned_chars.next()
+    }
+
+    fn identify_string(&mut self) {
+        // we continue advancing until the next character is the closing double quotation mark
+        while self.peek() != Some('"') && !self.is_at_end() {
+            // supporting multi-line strings.
+            if self.peek() == Some(char::from('\n')) {
+                self.line += 1;
+            }
+            self.advance();
+        }
+
+        // we did not reach a double quotation mark but the file ended.
+        if self.is_at_end() {
+            rlox_error(self.line, "Unterminated string.");
+            return;
+        }
+
+        self.advance();
+
+        self.add_token(
+            TokenType::String,
+            Some(self.source[self.start as usize + 1..self.current as usize - 1].to_string()),
+        );
+    }
+
+    fn identify_number(&mut self) {
+        // we continue advancing until the next character is not a digit anymore
+        loop {
+            if self.is_at_end() || !self.peek().unwrap().is_digit(10) {
+                break;
+            } else {
+                self.advance();
+            }
+        }
+
+        // we did not reach a double quotation mark but the file ended.
+        if self.peek() == Some('.') {
+            if let Some(peek_next_character) = self.peek_next() {
+                if peek_next_character.is_digit(10) {
+                    self.advance();
+                    while !self.is_at_end() {
+                        if self.peek().unwrap().is_digit(10) {
+                            self.advance();
+                        }
+                    }
+                }
+            }
+        }
+
+        self.add_token(
+            TokenType::Number,
+            Some(self.source[self.start as usize..self.current as usize].to_string()),
+        );
     }
 
     fn scan_token(&mut self) {
@@ -67,6 +133,10 @@ impl Scanner {
             '+' => TokenType::Plus,
             ';' => TokenType::Semicolon,
             '*' => TokenType::Star,
+            '"' => {
+                self.identify_string();
+                return;
+            }
             '!' => {
                 if self.expected("=") {
                     TokenType::BangEqual
@@ -114,7 +184,12 @@ impl Scanner {
                 return;
             }
             _ => {
-                rlox_error(self.line, &format!("Unexpected character {}", character));
+                if character.is_digit(10) {
+                    // it is a base10 digit!
+                    self.identify_number();
+                } else {
+                    rlox_error(self.line, &format!("Unexpected character {}", character));
+                }
                 return;
             }
         };

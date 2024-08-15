@@ -9,7 +9,12 @@ pub struct Token {
 impl Token {
     /// Returns type + lexeme + literal
     pub fn as_string(&self) -> String {
-        format!("{:?} {} {}", self.token_type, self.lexeme, self.literal.clone().unwrap_or("".to_string()))
+        format!(
+            "{:?} {} {}",
+            self.token_type,
+            self.lexeme,
+            self.literal.clone().unwrap_or("".to_string())
+        )
     }
 }
 
