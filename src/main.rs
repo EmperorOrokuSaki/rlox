@@ -1,6 +1,7 @@
 mod rlox;
 mod tokens;
 mod scanner;
+mod errors;
 
 use anyhow::Result;
 use clap::Parser;
