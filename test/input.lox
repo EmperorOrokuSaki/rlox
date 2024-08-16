@@ -1,1 +1,4 @@
-10.200
+while mytoken < yourtoken {
+    print "here we are"; // some comments
+    var x = 4.5;
+}

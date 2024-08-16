@@ -2,6 +2,7 @@ use std::iter::Peekable;
 use std::str::Chars;
 
 use crate::errors::rlox_error;
+use crate::keywords::KEYWORDS;
 use crate::tokens::{Token, TokenType};
 
 pub struct Scanner {
@@ -103,6 +104,8 @@ impl Scanner {
                     while !self.is_at_end() {
                         if self.peek().unwrap().is_digit(10) {
                             self.advance();
+                        } else {
+                            break;
                         }
                     }
                 }
@@ -114,6 +117,23 @@ impl Scanner {
             Some(self.source[self.start as usize..self.current as usize].to_string()),
         );
     }
+
+    fn scan_identifier(&mut self) {
+        // Loop until we find a non-alphanumeric or non-underscore character.
+        while self.peek().map_or(false, |c| c.is_ascii_alphanumeric() || c == '_') {
+            self.advance();
+        }
+    
+        // Now we collect the identifier text.
+        let text = &self.source[self.start as usize..self.current as usize];
+    
+        // Check if the identifier is a keyword.
+        let token_type = KEYWORDS.get(text).copied().unwrap_or(TokenType::Identifier);
+    
+        // Add the token.
+        self.add_token(token_type, None);
+    }
+    
 
     fn scan_token(&mut self) {
         let character = if let Some(character_unwrapped) = self.advance() {
@@ -187,6 +207,8 @@ impl Scanner {
                 if character.is_digit(10) {
                     // it is a base10 digit!
                     self.identify_number();
+                } else if character.is_ascii_alphabetic() || character == '_' {
+                    self.scan_identifier();
                 } else {
                     rlox_error(self.line, &format!("Unexpected character {}", character));
                 }
