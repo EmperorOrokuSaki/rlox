@@ -5,7 +5,7 @@ use once_cell::sync::Lazy;
 use crate::tokens::TokenType;
 
 pub static KEYWORDS: Lazy<HashMap<&str, TokenType>> = Lazy::new(|| {
-    let mut keywords : HashMap<&str, TokenType>= HashMap::new();
+    let mut keywords: HashMap<&str, TokenType> = HashMap::new();
     keywords.insert("and", TokenType::And);
     keywords.insert("class", TokenType::Class);
     keywords.insert("else", TokenType::Else);

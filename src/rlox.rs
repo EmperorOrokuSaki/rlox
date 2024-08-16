@@ -8,7 +8,7 @@ use crate::scanner::Scanner;
 #[derive(Parser)]
 #[command(name = "rLox")]
 #[command(version = "1.0")]
-#[command(about = "A Lox compiler written in Rust", long_about = None)]
+#[command(about = "A Lox interpreter written in Rust", long_about = None)]
 pub struct RLox {
     /// Path to the Lox file
     #[arg(long)]
