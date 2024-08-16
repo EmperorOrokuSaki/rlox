@@ -15,6 +15,7 @@ pub struct Scanner {
 }
 
 impl Scanner {
+    /// Generates a new Scanner.
     pub fn new(source: String) -> Self {
         let chars = Box::leak(source.clone().into_boxed_str())
             .chars()
@@ -29,15 +30,19 @@ impl Scanner {
         }
     }
 
+    /// Returns `true` if there are no more characters
     fn is_at_end(&mut self) -> bool {
         self.chars.peek().is_none() // Peek to check if we're at the end
     }
 
+    /// Consumes the next character and advances the iterator
     fn advance(&mut self) -> Option<char> {
         self.current += 1;
         self.chars.next() // Use .next() to advance the iterator
     }
 
+    /// Returns `true` if the next character is the same as `expectation`.
+    /// Advances by one if the result is `true`;
     fn expected(&mut self, expectation: &str) -> bool {
         if let Some(&next_char) = self.chars.peek() {
             if next_char == expectation.chars().next().unwrap() {
@@ -120,20 +125,22 @@ impl Scanner {
 
     fn scan_identifier(&mut self) {
         // Loop until we find a non-alphanumeric or non-underscore character.
-        while self.peek().map_or(false, |c| c.is_ascii_alphanumeric() || c == '_') {
+        while self
+            .peek()
+            .map_or(false, |c| c.is_ascii_alphanumeric() || c == '_')
+        {
             self.advance();
         }
-    
+
         // Now we collect the identifier text.
         let text = &self.source[self.start as usize..self.current as usize];
-    
+
         // Check if the identifier is a keyword.
         let token_type = KEYWORDS.get(text).copied().unwrap_or(TokenType::Identifier);
-    
+
         // Add the token.
         self.add_token(token_type, None);
     }
-    
 
     fn scan_token(&mut self) {
         let character = if let Some(character_unwrapped) = self.advance() {
@@ -186,7 +193,26 @@ impl Scanner {
                 }
             }
             '/' => {
-                if self.expected("/") {
+                if self.expected("*") {
+                    let mut counter = 1;
+                    while let Some(c) = self.peek() {
+                        if self.is_at_end() {
+                            break;
+                        }
+
+                        self.advance();
+
+                        if c == '/' && self.expected("*") {
+                            counter += 1;
+                        } else if c == '*' && self.expected("/") {
+                            counter -= 1;
+                            if counter == 0 {
+                                break;
+                            }
+                        }
+                    }
+                    return;
+                } else if self.expected("/") {
                     while let Some(c) = self.peek() {
                         if c == '\n' || self.is_at_end() {
                             break;
