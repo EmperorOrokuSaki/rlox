@@ -25,22 +25,34 @@ impl Visitor<String> for AstPrinter {
         };
         let left_string = left.accept(&Self {});
         let right_string = right.accept(&Self {});
-        return Self::parenthesize(&operator.lexeme, vec![&left_string, &right_string]);
-    }
-
-    fn visit_assign_expr(&self, expr: &Expr) -> String {
-        todo!()
+        Self::parenthesize(&operator.lexeme, vec![&left_string, &right_string])
     }
 
     fn visit_literal_expr(&self, expr: &Expr) -> String {
-        todo!()
+        let Expr::Literal { value } = expr else {
+            panic!("PANIC! `visit_literal_expr` was called with a non Expr::Literal value!")
+        };
+
+        if value == "" {
+            return "nil".to_string();
+        }
+
+        value.to_string()
     }
 
     fn visit_grouping_expr(&self, expr: &Expr) -> String {
-        todo!()
+        let Expr::Grouping { expression } = expr else {
+            panic!("PANIC! `visit_grouping_expr` was called with a non Expr::Grouping value!")
+        };
+        let expression_string = expression.accept(&Self {});
+        Self::parenthesize("group", vec![&expression_string])
     }
 
     fn visit_unary_expr(&self, expr: &Expr) -> String {
-        todo!()
+        let Expr::Unary { operator, right } = expr else {
+            panic!("PANIC! `visit_unary_expr` was called with a non Expr::Unary value!")
+        };
+        let right_string = right.accept(&Self {});
+        Self::parenthesize(&operator.lexeme, vec![&right_string])
     }
 }

@@ -8,10 +8,6 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
-    Assign {
-        name: Token,
-        value: Box<Expr>,
-    },
     Literal {
         value: String,
     },
@@ -28,7 +24,6 @@ impl Expr {
     pub fn accept<R>(&self, visitor: &dyn Visitor<R>) -> R {
         match self {
             Expr::Binary { .. } => visitor.visit_binary_expr(self),
-            Expr::Assign { .. } => visitor.visit_assign_expr(self),
             Expr::Literal { .. } => visitor.visit_literal_expr(self),
             Expr::Grouping { .. } => visitor.visit_grouping_expr(self),
             Expr::Unary { .. } => visitor.visit_unary_expr(self),
