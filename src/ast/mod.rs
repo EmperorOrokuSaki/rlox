@@ -1,3 +1,3 @@
-mod expr;
-mod print;
-mod visitor;
+pub mod expr;
+pub mod print;
+pub mod visitor;
