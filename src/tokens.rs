@@ -8,6 +8,7 @@ pub struct Token {
 
 impl Token {
     /// Returns type + lexeme + literal
+    #[allow(dead_code)]
     pub fn as_string(&self) -> String {
         format!(
             "{:?} {} {}",

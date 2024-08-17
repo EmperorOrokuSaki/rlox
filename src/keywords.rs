@@ -19,6 +19,7 @@ pub static KEYWORDS: Lazy<HashMap<&str, TokenType>> = Lazy::new(|| {
     keywords.insert("super", TokenType::Super);
     keywords.insert("this", TokenType::This);
     keywords.insert("true", TokenType::True);
+    keywords.insert("false", TokenType::False);
     keywords.insert("var", TokenType::Var);
     keywords.insert("while", TokenType::While);
     keywords

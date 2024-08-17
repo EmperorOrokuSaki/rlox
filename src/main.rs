@@ -1,6 +1,7 @@
 mod ast;
 mod errors;
 mod keywords;
+mod parser;
 mod rlox;
 mod scanner;
 mod tokens;
