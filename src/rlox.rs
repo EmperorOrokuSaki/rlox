@@ -1,4 +1,7 @@
-use std::fs;
+use std::{
+    fs,
+    io::{self, Write},
+};
 
 use anyhow::Result;
 use clap::Parser;
@@ -35,6 +38,19 @@ impl RLox {
     }
 
     fn run_prompt(self) -> Result<()> {
+        loop {
+            print!("> ");
+            io::stdout().flush()?;
+            let mut input = String::new();
+            io::stdin().read_line(&mut input)?;
+            let input = input.trim().to_string();
+
+            if input == "quit" {
+                break;
+            }
+
+            Self::run(input);
+        }
         Ok(())
     }
 
