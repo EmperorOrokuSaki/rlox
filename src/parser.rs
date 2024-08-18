@@ -1,5 +1,7 @@
 use crate::{
-    ast::expr::Expr, errors::{rlox_error, RuntimeError}, tokens::{Token, TokenType}
+    ast::expr::Expr,
+    errors::{rlox_error, RuntimeError},
+    tokens::{Token, TokenType},
 };
 
 pub struct Parser {
@@ -297,6 +299,7 @@ impl Parser {
         RuntimeError::ParseError
     }
 
+    #[allow(dead_code)]
     fn synchronize(&mut self) {
         self.advance();
         while !self.is_at_end() {
@@ -306,14 +309,14 @@ impl Parser {
                 }
 
                 match prev_token.token_type {
-                    TokenType::Class => {},
-                    TokenType::Fun => {},
-                    TokenType::For => {},
-                    TokenType::Var => {},
-                    TokenType::If => {},
-                    TokenType::While => {},
-                    TokenType::Print => {},
-                    TokenType::Return => {},
+                    TokenType::Class => {}
+                    TokenType::Fun => {}
+                    TokenType::For => {}
+                    TokenType::Var => {}
+                    TokenType::If => {}
+                    TokenType::While => {}
+                    TokenType::Print => {}
+                    TokenType::Return => {}
                     _ => {}
                 }
 
@@ -335,7 +338,11 @@ impl Parser {
     ///     vec![TokenType::Plus, TokenType::Minus]
     /// );
     /// ```
-    fn resolve<R>(&mut self, mut resolver: R, operators: Vec<TokenType>) -> Result<Expr, RuntimeError>
+    fn resolve<R>(
+        &mut self,
+        mut resolver: R,
+        operators: Vec<TokenType>,
+    ) -> Result<Expr, RuntimeError>
     where
         R: FnMut(&mut Parser) -> Result<Expr, RuntimeError>,
     {

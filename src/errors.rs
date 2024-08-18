@@ -1,6 +1,6 @@
 #[derive(Debug)]
 pub enum RuntimeError {
-    ParseError
+    ParseError,
 }
 
 pub fn rlox_error(line: u64, message: &str) {
