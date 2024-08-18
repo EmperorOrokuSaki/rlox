@@ -1,6 +1,5 @@
 use crate::{
-    ast::expr::Expr,
-    tokens::{Token, TokenType},
+    ast::expr::Expr, errors::{rlox_error, RuntimeError}, tokens::{Token, TokenType}
 };
 
 pub struct Parser {
@@ -45,7 +44,7 @@ impl Parser {
     /// assert_eq!(parser.peek(), token);
     /// ```
     fn peek(&self) -> Token {
-        self.tokens[self.current as usize]
+        self.tokens[self.current as usize].clone()
     }
 
     /// Returns true if the current token has the `token_type` type.
@@ -57,11 +56,11 @@ impl Parser {
     /// let mut parser = Parser::new(vec![token.clone()]);
     /// assert!(parser.check(TokenType::Number));
     /// ```
-    fn check(&self, token_type: TokenType) -> bool {
+    fn check(&self, token_type: &TokenType) -> bool {
         if self.is_at_end() {
             return false;
         }
-        self.tokens[self.current as usize].token_type == token_type
+        &self.tokens[self.current as usize].token_type == token_type
     }
 
     /// Returns the previous token if in range
@@ -80,7 +79,8 @@ impl Parser {
         if self.current == 0 {
             return None;
         }
-        Some(self.tokens[self.current as usize - 1])
+        let token = &self.tokens[self.current as usize - 1];
+        Some(token.clone())
     }
 
     /// Advances the `current` field's value by one.
@@ -111,7 +111,7 @@ impl Parser {
     /// assert!(parser.match_token(vec![TokenType::Number]));
     /// assert_eq!(parser.peek().token_type, TokenType::Plus);
     /// ```
-    fn match_token(&mut self, types: Vec<TokenType>) -> bool {
+    fn match_token(&mut self, types: &Vec<TokenType>) -> bool {
         for token_type in types {
             if self.check(token_type) {
                 self.advance();
@@ -134,7 +134,7 @@ impl Parser {
     ///                                 true != false
     /// return the resolved state       ----------------
     /// ```
-    fn expression(&mut self) -> Expr {
+    fn expression(&mut self) -> Result<Expr, RuntimeError> {
         self.equality()
     }
 
@@ -151,7 +151,7 @@ impl Parser {
     ///                                 false != false
     /// return the resolved state       ----------------
     /// ```
-    fn equality(&mut self) -> Expr {
+    fn equality(&mut self) -> Result<Expr, RuntimeError> {
         self.resolve(
             |parser| parser.comparison(),
             vec![TokenType::EqualEqual, TokenType::BangEqual],
@@ -171,7 +171,7 @@ impl Parser {
     ///                                 3     >=     3
     /// return the resolved state       --------------
     /// ```
-    fn comparison(&mut self) -> Expr {
+    fn comparison(&mut self) -> Result<Expr, RuntimeError> {
         self.resolve(
             |parser| parser.term(),
             vec![
@@ -196,7 +196,7 @@ impl Parser {
     ///                                 3     -     3
     /// return the resolved state       --------------
     /// ```
-    fn term(&mut self) -> Expr {
+    fn term(&mut self) -> Result<Expr, RuntimeError> {
         self.resolve(
             |parser| parser.factor(),
             vec![TokenType::Minus, TokenType::Plus],
@@ -216,7 +216,7 @@ impl Parser {
     ///                                 3     *  3
     /// return the resolved state       --------------
     /// ```
-    fn factor(&mut self) -> Expr {
+    fn factor(&mut self) -> Result<Expr, RuntimeError> {
         self.resolve(
             |parser| parser.unary(),
             vec![TokenType::Slash, TokenType::Star],
@@ -234,14 +234,14 @@ impl Parser {
     ///                                 -1     + 2
     /// return the resolved state       --------------
     /// ```
-    fn unary(&mut self) -> Expr {
-        if self.match_token(vec![TokenType::Bang, TokenType::Minus]) {
+    fn unary(&mut self) -> Result<Expr, RuntimeError> {
+        if self.match_token(&vec![TokenType::Bang, TokenType::Minus]) {
             let operator = self.previous().unwrap();
-            let right = self.unary();
-            return Expr::Unary {
+            let right = self.unary()?;
+            return Ok(Expr::Unary {
                 operator,
                 right: Box::new(right),
-            };
+            });
         }
         self.primary()
     }
@@ -257,31 +257,73 @@ impl Parser {
     ///                                 3     * 3
     /// return the resolved state       --------------
     /// ```
-    fn primary(&mut self) -> Expr {
-        if self.match_token(vec![TokenType::False]) {
-            return Expr::Literal {
+    fn primary(&mut self) -> Result<Expr, RuntimeError> {
+        if self.match_token(&vec![TokenType::False]) {
+            return Ok(Expr::Literal {
                 value: "false".to_string(),
-            };
-        } else if self.match_token(vec![TokenType::True]) {
-            return Expr::Literal {
+            });
+        } else if self.match_token(&vec![TokenType::True]) {
+            return Ok(Expr::Literal {
                 value: "true".to_string(),
-            };
-        } else if self.match_token(vec![TokenType::Nil]) {
-            return Expr::Literal {
+            });
+        } else if self.match_token(&vec![TokenType::Nil]) {
+            return Ok(Expr::Literal {
                 value: "nil".to_string(),
-            };
-        } else if self.match_token(vec![TokenType::Number, TokenType::String]) {
-            return Expr::Literal {
+            });
+        } else if self.match_token(&vec![TokenType::Number, TokenType::String]) {
+            return Ok(Expr::Literal {
                 value: self.previous().unwrap().literal.unwrap(),
-            };
-        } else if self.match_token(vec![TokenType::LeftParen]) {
-            let expr = self.expression();
-            self.consume(TokenType::RightParen, "Expect ')' after expression.");
-            return Expr::Grouping {
+            });
+        } else if self.match_token(&vec![TokenType::LeftParen]) {
+            let expr = self.expression()?;
+            self.consume(TokenType::RightParen, "Expect ')' after expression.")?;
+            return Ok(Expr::Grouping {
                 expression: Box::new(expr),
-            };
+            });
         }
-        panic!("Expected expression.");
+        Err(self.parser_error("Expect expression."))
+    }
+
+    fn consume(&mut self, token_type: TokenType, message: &str) -> Result<Token, RuntimeError> {
+        if self.check(&token_type) {
+            self.advance();
+            return Ok(self.peek());
+        }
+        Err(self.parser_error(message))
+    }
+
+    fn parser_error(&self, message: &str) -> RuntimeError {
+        rlox_error(self.peek().line, message);
+        RuntimeError::ParseError
+    }
+
+    fn synchronize(&mut self) {
+        self.advance();
+        while !self.is_at_end() {
+            if let Some(prev_token) = self.previous() {
+                if prev_token.token_type == TokenType::Semicolon {
+                    return;
+                }
+
+                match prev_token.token_type {
+                    TokenType::Class => {},
+                    TokenType::Fun => {},
+                    TokenType::For => {},
+                    TokenType::Var => {},
+                    TokenType::If => {},
+                    TokenType::While => {},
+                    TokenType::Print => {},
+                    TokenType::Return => {},
+                    _ => {}
+                }
+
+                self.advance();
+            }
+        }
+    }
+
+    pub fn parse(&mut self) -> Result<Expr, RuntimeError> {
+        self.expression()
     }
 
     /// Resolves binary expressions by taking an operator and a resolver function.
@@ -293,15 +335,15 @@ impl Parser {
     ///     vec![TokenType::Plus, TokenType::Minus]
     /// );
     /// ```
-    fn resolve<R>(&mut self, mut resolver: R, operators: Vec<TokenType>) -> Expr
+    fn resolve<R>(&mut self, mut resolver: R, operators: Vec<TokenType>) -> Result<Expr, RuntimeError>
     where
-        R: FnMut(&mut Parser) -> Expr,
+        R: FnMut(&mut Parser) -> Result<Expr, RuntimeError>,
     {
-        let mut expr = resolver(self);
+        let mut expr = resolver(self)?;
 
-        while self.match_token(operators) {
+        while self.match_token(&operators) {
             let operator = self.previous().unwrap();
-            let right = resolver(self);
+            let right = resolver(self)?;
             expr = Expr::Binary {
                 left: Box::new(expr),
                 operator,
@@ -309,6 +351,6 @@ impl Parser {
             };
         }
 
-        expr
+        Ok(expr)
     }
 }

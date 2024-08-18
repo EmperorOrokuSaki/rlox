@@ -61,11 +61,15 @@ impl RLox {
     }
 
     fn run(input: String) {
+        // lexing
         let mut scanner = Scanner::new(input);
         scanner.scan_tokens();
-        for token in scanner.tokens {
-            dbg!(token);
-        }
+
+        // parsing
+        let mut parser = crate::parser::Parser::new(scanner.tokens);
+        let expressions = parser.parse().unwrap();
+        let printer = AstPrinter {};
+        println!("{}", expressions.accept(&printer));
     }
 
     fn debug() -> Result<()> {
