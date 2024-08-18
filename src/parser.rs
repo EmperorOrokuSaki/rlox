@@ -7,11 +7,16 @@ pub struct Parser {
     tokens: Vec<Token>,
     current: u64,
 }
-
 impl Parser {
     /// Generates a new Parser with the given token stream.
     ///
     /// Uses the Recursive Descent Parsing (top to bottom) algorithm.
+    ///
+    /// # Example
+    /// ```
+    /// let tokens = vec![Token { token_type: TokenType::Number, .. }];
+    /// let mut parser = Parser::new(tokens);
+    /// ```
     pub fn new(token_stream: Vec<Token>) -> Self {
         Self {
             tokens: token_stream,
@@ -19,18 +24,39 @@ impl Parser {
         }
     }
 
-    /// Returns true if the current type is EOF
+    /// Returns true if the current token is EOF
+    ///
+    /// # Example
+    /// ```
+    /// let eof_token = Token { token_type: TokenType::Eof, .. };
+    /// let mut parser = Parser::new(vec![eof_token]);
+    /// assert!(parser.is_at_end());
+    /// ```
     fn is_at_end(&self) -> bool {
         self.peek().token_type == TokenType::Eof
     }
 
     /// Returns the current token
+    ///
+    /// # Example
+    /// ```
+    /// let token = Token { token_type: TokenType::Number, .. };
+    /// let mut parser = Parser::new(vec![token.clone()]);
+    /// assert_eq!(parser.peek(), token);
+    /// ```
     fn peek(&self) -> Token {
         self.tokens[self.current as usize]
     }
 
     /// Returns true if the current token has the `token_type` type.
     /// Does not move the `current` field's value.
+    ///
+    /// # Example
+    /// ```
+    /// let token = Token { token_type: TokenType::Number, .. };
+    /// let mut parser = Parser::new(vec![token.clone()]);
+    /// assert!(parser.check(TokenType::Number));
+    /// ```
     fn check(&self, token_type: TokenType) -> bool {
         if self.is_at_end() {
             return false;
@@ -39,6 +65,17 @@ impl Parser {
     }
 
     /// Returns the previous token if in range
+    ///
+    /// # Example
+    /// ```
+    /// let tokens = vec![
+    ///     Token { token_type: TokenType::Number, .. },
+    ///     Token { token_type: TokenType::Plus, .. },
+    /// ];
+    /// let mut parser = Parser::new(tokens);
+    /// parser.advance();
+    /// assert_eq!(parser.previous().unwrap().token_type, TokenType::Number);
+    /// ```
     fn previous(&self) -> Option<Token> {
         if self.current == 0 {
             return None;
@@ -46,7 +83,15 @@ impl Parser {
         Some(self.tokens[self.current as usize - 1])
     }
 
-    /// Advances the `current` field's value by one
+    /// Advances the `current` field's value by one.
+    ///
+    /// # Example
+    /// ```
+    /// let tokens = vec![Token { token_type: TokenType::Number, .. }];
+    /// let mut parser = Parser::new(tokens);
+    /// parser.advance();
+    /// assert!(parser.is_at_end());
+    /// ```
     fn advance(&mut self) {
         if self.is_at_end() {
             return;
@@ -54,11 +99,21 @@ impl Parser {
         self.current += 1;
     }
 
-    /// Takes a vector of TokenType values and advances once one of them are encountered
+    /// Takes a vector of `TokenType` values and advances once one of them is encountered.
+    ///
+    /// # Example
+    /// ```
+    /// let tokens = vec![
+    ///     Token { token_type: TokenType::Number, .. },
+    ///     Token { token_type: TokenType::Plus, .. },
+    /// ];
+    /// let mut parser = Parser::new(tokens);
+    /// assert!(parser.match_token(vec![TokenType::Number]));
+    /// assert_eq!(parser.peek().token_type, TokenType::Plus);
+    /// ```
     fn match_token(&mut self, types: Vec<TokenType>) -> bool {
         for token_type in types {
             if self.check(token_type) {
-                // the token type matches the value
                 self.advance();
                 return true;
             }
@@ -66,24 +121,35 @@ impl Parser {
         false
     }
 
-    /// Handles the expression rule
+    /// Handles the expression rule.
+    ///
+    /// # Example
+    /// ```
+    ///                                 1 == 1 != 0
+    /// resolve via equality            -----
+    ///                                 true != 0
+    /// next token is !=, advance             --
+    ///                                 true != 0
+    /// resolve via equality                       -----
+    ///                                 true != false
+    /// return the resolved state       ----------------
+    /// ```
     fn expression(&mut self) -> Expr {
-        // our lowest priority rule is equality (== OR !=)
         self.equality()
     }
 
-    /// Handles the equality rule by passing the current value to the [`equality()`] function, until eq-eq or bang-eq is reached. Then passes everything on the other side to the [`equality()`] function again.
+    /// Handles the equality rule by passing the current value to the [`comparison()`] function, until `==` or `!=` is reached.
     ///
-    /// Example:
+    /// # Example
     /// ```
-    ///                                 1 < 2 == 2 > 1
+    ///                                 1 == 2 != 1 == 2
     /// resolve via comparison          -----
-    ///                                 true  == 2 > 1
-    /// next token is ==, advance             --
-    ///                                 true  == 2 > 1
-    /// resolve via comparison                   -----
-    ///                                 true  ==  true
-    /// return the resolved state       --------------
+    ///                                 false != 1 == 2
+    /// next token is !=, advance              --
+    ///                                 false != 1 == 2
+    /// resolve via comparison                     -----
+    ///                                 false != false
+    /// return the resolved state       ----------------
     /// ```
     fn equality(&mut self) -> Expr {
         self.resolve(
@@ -92,17 +158,17 @@ impl Parser {
         )
     }
 
-    /// Handles the comparison rule by passing the current value to the [`equality()`] function, until eq-eq or bang-eq is reached. Then passes everything on the other side to the [`equality()`] function again.
+    /// Handles the comparison rule by passing the current value to the [`term()`] function, until `>`, `<`, `>=`, or `<=` is reached.
     ///
-    /// Example:
+    /// # Example
     /// ```
-    ///                                 1 < 2 == 2 > 1
-    /// resolve via comparison          -----
-    ///                                 true  == 2 > 1
-    /// next token is ==, advance             --
-    ///                                 true  == 2 > 1
-    /// resolve via comparison                   -----
-    ///                                 true  ==  true
+    ///                                 1 + 2 >= 2 + 1
+    /// resolve via term                -----
+    ///                                 3     >= 2 + 1
+    /// next token is >=, advance             --
+    ///                                 3     >= 2 + 1
+    /// resolve via term                         -----
+    ///                                 3     >=     3
     /// return the resolved state       --------------
     /// ```
     fn comparison(&mut self) -> Expr {
@@ -117,17 +183,17 @@ impl Parser {
         )
     }
 
-    /// Handles the comparison rule by passing the current value to the [`equality()`] function, until eq-eq or bang-eq is reached. Then passes everything on the other side to the [`equality()`] function again.
+    /// Handles the term rule by passing the current value to the [`factor()`] function, until `+` or `-` is reached.
     ///
-    /// Example:
+    /// # Example
     /// ```
-    ///                                 1 < 2 == 2 > 1
-    /// resolve via comparison          -----
-    ///                                 true  == 2 > 1
-    /// next token is ==, advance             --
-    ///                                 true  == 2 > 1
-    /// resolve via comparison                   -----
-    ///                                 true  ==  true
+    ///                                 1 + 2 - 3
+    /// resolve via factor              -----
+    ///                                 3     - 3
+    /// next token is -, advance              --
+    ///                                 3     - 3
+    /// resolve via factor                     -----
+    ///                                 3     -     3
     /// return the resolved state       --------------
     /// ```
     fn term(&mut self) -> Expr {
@@ -137,17 +203,17 @@ impl Parser {
         )
     }
 
-    /// Handles the comparison rule by passing the current value to the [`equality()`] function, until eq-eq or bang-eq is reached. Then passes everything on the other side to the [`equality()`] function again.
+    /// Handles the factor rule by passing the current value to the [`unary()`] function, until `*` or `/` is reached.
     ///
-    /// Example:
+    /// # Example
     /// ```
-    ///                                 1 < 2 == 2 > 1
-    /// resolve via comparison          -----
-    ///                                 true  == 2 > 1
-    /// next token is ==, advance             --
-    ///                                 true  == 2 > 1
-    /// resolve via comparison                   -----
-    ///                                 true  ==  true
+    ///                                 6 / 2 * 3
+    /// resolve via unary               -----
+    ///                                 3     * 3
+    /// next token is *, advance              --
+    ///                                 3     * 3
+    /// resolve via unary                      -----
+    ///                                 3     *  3
     /// return the resolved state       --------------
     /// ```
     fn factor(&mut self) -> Expr {
@@ -157,17 +223,15 @@ impl Parser {
         )
     }
 
-    /// Handles the comparison rule by passing the current value to the [`equality()`] function, until eq-eq or bang-eq is reached. Then passes everything on the other side to the [`equality()`] function again.
+    /// Handles the unary rule by checking for `!` or `-` and recursively calling itself for further unary operators or primary expressions.
     ///
-    /// Example:
+    /// # Example
     /// ```
-    ///                                 1 < 2 == 2 > 1
-    /// resolve via comparison          -----
-    ///                                 true  == 2 > 1
-    /// next token is ==, advance             --
-    ///                                 true  == 2 > 1
-    /// resolve via comparison                   -----
-    ///                                 true  ==  true
+    ///                                 -1 + 2
+    /// resolve via unary               --
+    ///                                 -1     + 2
+    /// resolve via term                      -----
+    ///                                 -1     + 2
     /// return the resolved state       --------------
     /// ```
     fn unary(&mut self) -> Expr {
@@ -182,17 +246,15 @@ impl Parser {
         self.primary()
     }
 
-    /// Handles the comparison rule by passing the current value to the [`equality()`] function, until eq-eq or bang-eq is reached. Then passes everything on the other side to the [`equality()`] function again.
+    /// Handles the primary rule, which is the most basic unit of an expression (e.g., literals, grouping, or variable access).
     ///
-    /// Example:
+    /// # Example
     /// ```
-    ///                                 1 < 2 == 2 > 1
-    /// resolve via comparison          -----
-    ///                                 true  == 2 > 1
-    /// next token is ==, advance             --
-    ///                                 true  == 2 > 1
-    /// resolve via comparison                   -----
-    ///                                 true  ==  true
+    ///                                 (1 + 2) * 3
+    /// resolve via grouping            -----
+    ///                                 ( 3 ) * 3
+    /// resolve via factor                    -----
+    ///                                 3     * 3
     /// return the resolved state       --------------
     /// ```
     fn primary(&mut self) -> Expr {
@@ -219,21 +281,26 @@ impl Parser {
                 expression: Box::new(expr),
             };
         }
-        panic!("Nothing to do!!");
+        panic!("Expected expression.");
     }
 
+    /// Resolves binary expressions by taking an operator and a resolver function.
+    ///
+    /// # Example
+    /// ```
+    /// let expr = parser.resolve(
+    ///     |parser| parser.term(),
+    ///     vec![TokenType::Plus, TokenType::Minus]
+    /// );
+    /// ```
     fn resolve<R>(&mut self, mut resolver: R, operators: Vec<TokenType>) -> Expr
     where
         R: FnMut(&mut Parser) -> Expr,
     {
-        // we resolve the left-hand side expression.
-        let mut expr: Expr = resolver(self);
+        let mut expr = resolver(self);
 
         while self.match_token(operators) {
-            // because the line above advanced by one, the operator is now behind us by one.
-            // we can safely unwrap because the match_token function definitely advanced. if it hadn't, the while loop wouldn't have run.
             let operator = self.previous().unwrap();
-            // we resolve the right-hand side expression
             let right = resolver(self);
             expr = Expr::Binary {
                 left: Box::new(expr),
