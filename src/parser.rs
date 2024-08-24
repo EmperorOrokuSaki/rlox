@@ -1,6 +1,6 @@
 use crate::{
     ast::expr::Expr,
-    errors::{rlox_error, RuntimeError},
+    errors::{rlox_error, RLoxError},
     tokens::{Token, TokenType},
 };
 
@@ -136,7 +136,7 @@ impl Parser {
     ///                                 true != false
     /// return the resolved state       ----------------
     /// ```
-    fn expression(&mut self) -> Result<Expr, RuntimeError> {
+    fn expression(&mut self) -> Result<Expr, RLoxError> {
         self.equality()
     }
 
@@ -153,7 +153,7 @@ impl Parser {
     ///                                 false != false
     /// return the resolved state       ----------------
     /// ```
-    fn equality(&mut self) -> Result<Expr, RuntimeError> {
+    fn equality(&mut self) -> Result<Expr, RLoxError> {
         self.resolve(
             |parser| parser.comparison(),
             vec![TokenType::EqualEqual, TokenType::BangEqual],
@@ -173,7 +173,7 @@ impl Parser {
     ///                                 3     >=     3
     /// return the resolved state       --------------
     /// ```
-    fn comparison(&mut self) -> Result<Expr, RuntimeError> {
+    fn comparison(&mut self) -> Result<Expr, RLoxError> {
         self.resolve(
             |parser| parser.term(),
             vec![
@@ -198,7 +198,7 @@ impl Parser {
     ///                                 3     -     3
     /// return the resolved state       --------------
     /// ```
-    fn term(&mut self) -> Result<Expr, RuntimeError> {
+    fn term(&mut self) -> Result<Expr, RLoxError> {
         self.resolve(
             |parser| parser.factor(),
             vec![TokenType::Minus, TokenType::Plus],
@@ -218,7 +218,7 @@ impl Parser {
     ///                                 3     *  3
     /// return the resolved state       --------------
     /// ```
-    fn factor(&mut self) -> Result<Expr, RuntimeError> {
+    fn factor(&mut self) -> Result<Expr, RLoxError> {
         self.resolve(
             |parser| parser.unary(),
             vec![TokenType::Slash, TokenType::Star],
@@ -236,7 +236,7 @@ impl Parser {
     ///                                 -1     + 2
     /// return the resolved state       --------------
     /// ```
-    fn unary(&mut self) -> Result<Expr, RuntimeError> {
+    fn unary(&mut self) -> Result<Expr, RLoxError> {
         if self.match_token(&vec![TokenType::Bang, TokenType::Minus]) {
             let operator = self.previous().unwrap();
             let right = self.unary()?;
@@ -259,7 +259,7 @@ impl Parser {
     ///                                 3     * 3
     /// return the resolved state       --------------
     /// ```
-    fn primary(&mut self) -> Result<Expr, RuntimeError> {
+    fn primary(&mut self) -> Result<Expr, RLoxError> {
         if self.match_token(&vec![TokenType::False]) {
             return Ok(Expr::Literal {
                 value: crate::tokens::Object::Boolean(false),
@@ -286,7 +286,7 @@ impl Parser {
         Err(self.parser_error("Expect expression."))
     }
 
-    fn consume(&mut self, token_type: TokenType, message: &str) -> Result<Token, RuntimeError> {
+    fn consume(&mut self, token_type: TokenType, message: &str) -> Result<Token, RLoxError> {
         if self.check(&token_type) {
             self.advance();
             return Ok(self.peek());
@@ -294,9 +294,8 @@ impl Parser {
         Err(self.parser_error(message))
     }
 
-    fn parser_error(&self, message: &str) -> RuntimeError {
-        rlox_error(self.peek().line, message);
-        RuntimeError::ParseError
+    fn parser_error(&self, message: &str) -> RLoxError {
+        RLoxError::ParseError(self.peek().line, message.to_string())
     }
 
     #[allow(dead_code)]
@@ -325,7 +324,7 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Result<Expr, RuntimeError> {
+    pub fn parse(&mut self) -> Result<Expr, RLoxError> {
         self.expression()
     }
 
@@ -338,13 +337,9 @@ impl Parser {
     ///     vec![TokenType::Plus, TokenType::Minus]
     /// );
     /// ```
-    fn resolve<R>(
-        &mut self,
-        mut resolver: R,
-        operators: Vec<TokenType>,
-    ) -> Result<Expr, RuntimeError>
+    fn resolve<R>(&mut self, mut resolver: R, operators: Vec<TokenType>) -> Result<Expr, RLoxError>
     where
-        R: FnMut(&mut Parser) -> Result<Expr, RuntimeError>,
+        R: FnMut(&mut Parser) -> Result<Expr, RLoxError>,
     {
         let mut expr = resolver(self)?;
 

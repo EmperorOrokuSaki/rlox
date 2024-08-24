@@ -1,6 +1,20 @@
+use crate::tokens::Token;
+
 #[derive(Debug)]
-pub enum RuntimeError {
-    ParseError,
+pub enum RLoxError {
+    ParseError(u64, String),         // line and message
+    InterpreterError(Token, String), // operator and message
+}
+
+impl RLoxError {
+    pub fn print(self) {
+        match self {
+            Self::InterpreterError(operator, message) => {
+                println!("{}\n[Line {}]", message, operator.line)
+            }
+            Self::ParseError(line, message) => println!("[Line {}] Error: {}", line, message),
+        }
+    }
 }
 
 pub fn rlox_error(line: u64, message: &str) {

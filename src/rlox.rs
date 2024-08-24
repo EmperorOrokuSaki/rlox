@@ -6,7 +6,9 @@ use std::{
 use anyhow::Result;
 use clap::Parser;
 
-use crate::{ast::print::AstPrinter, scanner::Scanner};
+use crate::{
+    ast::print::AstPrinter, errors::RLoxError, interpreter::Interpreter, scanner::Scanner,
+};
 
 #[derive(Parser)]
 #[command(name = "rLox")]
@@ -33,7 +35,9 @@ impl RLox {
     fn run_file(self) -> Result<()> {
         // read file
         let file_bytes = fs::read_to_string(self.path.unwrap())?;
-        Self::run(file_bytes);
+        if let Err(err) = Self::run(file_bytes) {
+            err.print();
+        }
         Ok(())
     }
 
@@ -54,15 +58,18 @@ impl RLox {
         Ok(())
     }
 
-    fn run(input: String) {
+    fn run(input: String) -> Result<(), RLoxError> {
         // lexing
         let mut scanner = Scanner::new(input);
         scanner.scan_tokens();
 
         // parsing
         let mut parser = crate::parser::Parser::new(scanner.tokens);
-        let expressions = parser.parse().unwrap();
-        let printer = AstPrinter {};
-        println!("{}", expressions.accept(&printer));
+        let expressions = parser.parse()?;
+
+        // interpreting
+        let interpreter = Interpreter {};
+        interpreter.interpret(expressions)?;
+        Ok(())
     }
 }
