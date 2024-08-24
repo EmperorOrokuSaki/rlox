@@ -262,15 +262,15 @@ impl Parser {
     fn primary(&mut self) -> Result<Expr, RuntimeError> {
         if self.match_token(&vec![TokenType::False]) {
             return Ok(Expr::Literal {
-                value: "false".to_string(),
+                value: crate::tokens::Object::Boolean(false),
             });
         } else if self.match_token(&vec![TokenType::True]) {
             return Ok(Expr::Literal {
-                value: "true".to_string(),
+                value: crate::tokens::Object::Boolean(true),
             });
         } else if self.match_token(&vec![TokenType::Nil]) {
             return Ok(Expr::Literal {
-                value: "nil".to_string(),
+                value: crate::tokens::Object::Nil,
             });
         } else if self.match_token(&vec![TokenType::Number, TokenType::String]) {
             return Ok(Expr::Literal {

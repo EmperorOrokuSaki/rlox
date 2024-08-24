@@ -3,7 +3,7 @@ use std::str::Chars;
 
 use crate::errors::rlox_error;
 use crate::keywords::KEYWORDS;
-use crate::tokens::{Token, TokenType};
+use crate::tokens::{Object, Token, TokenType};
 
 pub struct Scanner {
     pub start: u64,
@@ -87,7 +87,9 @@ impl Scanner {
 
         self.add_token(
             TokenType::String,
-            Some(self.source[self.start as usize + 1..self.current as usize - 1].to_string()),
+            Some(Object::String(
+                self.source[self.start as usize + 1..self.current as usize - 1].to_string(),
+            )),
         );
     }
 
@@ -117,10 +119,11 @@ impl Scanner {
             }
         }
 
-        self.add_token(
-            TokenType::Number,
-            Some(self.source[self.start as usize..self.current as usize].to_string()),
-        );
+        let number: f64 = self.source[self.start as usize..self.current as usize]
+            .parse::<f64>()
+            .expect("FAILED TO CONVERT STRING TO F64");
+
+        self.add_token(TokenType::Number, Some(Object::Number(number)));
     }
 
     fn scan_identifier(&mut self) {
@@ -245,7 +248,7 @@ impl Scanner {
         self.add_token(token_type, None);
     }
 
-    fn add_token(&mut self, token: TokenType, literal: Option<String>) {
+    fn add_token(&mut self, token: TokenType, literal: Option<Object>) {
         let lexeme = self.source[self.start as usize..self.current as usize].to_string();
         self.tokens.push(Token {
             token_type: token,

@@ -33,11 +33,7 @@ impl Visitor<String> for AstPrinter {
             panic!("PANIC! `visit_literal_expr` was called with a non Expr::Literal value!")
         };
 
-        if value == "" {
-            return "nil".to_string();
-        }
-
-        value.to_string()
+        format!("{:#?}", value)
     }
 
     fn visit_grouping_expr(&self, expr: &Expr) -> String {

@@ -1,4 +1,4 @@
-use crate::tokens::Token;
+use crate::tokens::{Object, Token};
 
 use super::visitor::Visitor;
 
@@ -9,7 +9,7 @@ pub enum Expr {
         right: Box<Expr>,
     },
     Literal {
-        value: String,
+        value: Object,
     },
     Grouping {
         expression: Box<Expr>,
