@@ -139,10 +139,16 @@ impl Visitor<Object> for Interpreter {
                 right_resolved.clone(),
             ) {
                 let return_number = match operator.token_type {
-                    TokenType::Minus => Some(left_number - right_number),
-                    TokenType::Slash => Some(left_number / right_number),
-                    TokenType::Star => Some(left_number * right_number),
-                    TokenType::Plus => Some(left_number + right_number),
+                    TokenType::Minus => Some(Ok(left_number - right_number)),
+                    TokenType::Slash => {
+                        if right_number != 0.0 {
+                            Some(Ok(left_number / right_number))
+                        } else {
+                            Some(Err(RLoxError::InterpreterError(operator.clone(), "Number cannot be divided by zero".to_string())))
+                        }
+                    },
+                    TokenType::Star => Some(Ok(left_number * right_number)),
+                    TokenType::Plus => Some(Ok(left_number + right_number)),
                     _ => None,
                 };
 
@@ -155,7 +161,7 @@ impl Visitor<Object> for Interpreter {
                 };
 
                 if let Some(number) = return_number {
-                    return Ok(Object::Number(number));
+                    return Ok(Object::Number(number?));
                 } else if let Some(boolean) = return_bool {
                     return Ok(Object::Boolean(boolean));
                 }
