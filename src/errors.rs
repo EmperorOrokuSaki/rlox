@@ -10,7 +10,7 @@ impl RLoxError {
     pub fn print(self) {
         match self {
             Self::InterpreterError(operator, message) => {
-                println!("{}\n[Line {}]", message, operator.line)
+                println!("[Line {}] Error: {}", operator.line, message)
             }
             Self::ParseError(line, message) => println!("[Line {}] Error: {}", line, message),
         }
