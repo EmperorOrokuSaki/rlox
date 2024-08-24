@@ -70,31 +70,34 @@ impl Interpreter {
         }
     }
 
-    fn is_equal(&self, left_side: Object, right_side: Object) -> bool {
+    fn is_equal(&self, left_side: Object, right_side: Object) -> Result<bool, String> {
+        let error_message =
+            format!("Unexpected different types on the left and right sides of the operator.");
+
         match left_side {
             Object::Nil => {
                 if let Object::Nil = right_side {
-                    return true;
+                    return Ok(true);
                 }
-                false
+                Ok(false)
             }
             Object::Boolean(left_boolean) => {
                 if let Object::Boolean(right_boolean) = right_side {
-                    return left_boolean == right_boolean;
+                    return Ok(left_boolean == right_boolean);
                 }
-                panic!("expected boolean on both sides, got another type on the right");
+                return Err(error_message);
             }
             Object::Number(left_number) => {
                 if let Object::Number(right_number) = right_side {
-                    return left_number == right_number;
+                    return Ok(left_number == right_number);
                 }
-                panic!("expected number on both sides, got another type on the right");
+                return Err(error_message);
             }
             Object::String(left_string) => {
                 if let Object::String(right_string) = right_side {
-                    return left_string == right_string;
+                    return Ok(left_string == right_string);
                 }
-                panic!("expected string on both sides, got another type on the right");
+                return Err(error_message);
             }
         }
     }
@@ -113,13 +116,21 @@ impl Visitor<Object> for Interpreter {
 
             // The == and != checks work with any pair of objects, as long as both sides are the same type.
             if let TokenType::EqualEqual = operator.token_type {
-                return Ok(Object::Boolean(
-                    self.is_equal(left_resolved, right_resolved),
-                ));
+                let result = self.is_equal(left_resolved, right_resolved);
+
+                if let Err(err) = result {
+                    return Err(RLoxError::InterpreterError(operator.clone(), err));
+                } else {
+                    return Ok(Object::Boolean(result.unwrap()));
+                }
             } else if let TokenType::BangEqual = operator.token_type {
-                return Ok(Object::Boolean(
-                    !self.is_equal(left_resolved, right_resolved),
-                ));
+                let result = self.is_equal(left_resolved, right_resolved);
+
+                if let Err(err) = result {
+                    return Err(RLoxError::InterpreterError(operator.clone(), err));
+                } else {
+                    return Ok(Object::Boolean(!result.unwrap()));
+                }
             }
 
             if let Ok((left_number, right_number)) = self.check_number_operands(
@@ -161,11 +172,12 @@ impl Visitor<Object> for Interpreter {
 
                 return Ok(Object::String(return_string));
             }
+            return Err(RLoxError::InterpreterError(
+                operator.clone(),
+                "The resolved values on right and left are not of the same type.".to_string(),
+            ));
         }
-        panic!(
-            "Types on right and left sides of the binary are different {:#?}",
-            expr
-        );
+        unreachable!()
     }
 
     fn visit_literal_expr(&self, expr: &Expr) -> Result<Object, RLoxError> {
