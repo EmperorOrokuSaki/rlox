@@ -1,22 +1,22 @@
 use crate::{
-    ast::{stmt::Stmt, visitor::StmtVisitor},
-    errors::RLoxError,
-    tokens::{Object, Token, TokenType},
+    ast::{stmt::Stmt, visitor::StmtVisitor}, environment::Environment, errors::RLoxError, tokens::{Object, Token, TokenType}
 };
 
 use crate::ast::{expr::Expr, visitor::ExprVisitor};
 
-pub struct Interpreter {}
+pub struct Interpreter {
+    pub environment: Environment
+}
 
 impl Interpreter {
-    pub fn interpret(&self, stmts: Vec<Stmt>) -> Result<(), RLoxError> {
+    pub fn interpret(&mut self, stmts: Vec<Stmt>) -> Result<(), RLoxError> {
         for stmt in stmts {
             self.execute(stmt)?;
         }
         Ok(())
     }
 
-    fn execute(&self, stmt: Stmt) -> Result<(), RLoxError> {
+    fn execute(&mut self, stmt: Stmt) -> Result<(), RLoxError> {
         stmt.accept(self)
     }
 
@@ -127,8 +127,13 @@ impl StmtVisitor<()> for Interpreter {
         unreachable!()
     }
     
-    fn visit_var_stmt(&self, stmt: &Stmt) -> Result<(), RLoxError> {
-        todo!()
+    fn visit_var_stmt(&mut self, stmt: &Stmt) -> Result<(), RLoxError> {
+        if let Stmt::Var { name, initializer } = stmt {
+            let value = self.evaluate(&initializer)?;
+            self.environment.define(name.lexeme.clone(), value);
+            return Ok(())
+        }
+        unreachable!()
     }
 }
 
@@ -252,6 +257,9 @@ impl ExprVisitor<Object> for Interpreter {
     }
     
     fn visit_variable_expr(&self, expr: &Expr) -> Result<Object, RLoxError> {
-        todo!()
+        if let Expr::Variable { name } = expr {
+            return self.environment.get(name);
+        }
+        unreachable!()
     }
 }

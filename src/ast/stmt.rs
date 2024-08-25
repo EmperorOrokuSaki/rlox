@@ -16,7 +16,7 @@ pub enum Stmt {
 }
 
 impl Stmt {
-    pub fn accept<R>(&self, visitor: &dyn StmtVisitor<R>) -> Result<R, RLoxError> {
+    pub fn accept<R>(&self, visitor: &mut dyn StmtVisitor<R>) -> Result<R, RLoxError> {
         match self {
             Stmt::Expression { .. } => visitor.visit_expr_stmt(self),
             Stmt::Print { .. } => visitor.visit_print_stmt(self),

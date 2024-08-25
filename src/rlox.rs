@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs,
     io::{self, Write},
 };
@@ -7,7 +8,8 @@ use anyhow::Result;
 use clap::Parser;
 
 use crate::{
-    ast::print::AstPrinter, errors::RLoxError, interpreter::Interpreter, scanner::Scanner,
+    environment::Environment, errors::RLoxError, interpreter::Interpreter, scanner::Scanner,
+    tokens::Object,
 };
 
 #[derive(Parser)]
@@ -68,7 +70,9 @@ impl RLox {
         let expressions = parser.parse()?;
 
         // interpreting
-        let interpreter = Interpreter {};
+        let mut interpreter = Interpreter {
+            environment: Environment::new(),
+        };
         interpreter.interpret(expressions)?;
         Ok(())
     }

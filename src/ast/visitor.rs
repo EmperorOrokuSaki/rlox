@@ -13,5 +13,5 @@ pub trait ExprVisitor<R> {
 pub trait StmtVisitor<R> {
     fn visit_expr_stmt(&self, stmt: &Stmt) -> Result<R, RLoxError>;
     fn visit_print_stmt(&self, stmt: &Stmt) -> Result<R, RLoxError>;
-    fn visit_var_stmt(&self, stmt: &Stmt) -> Result<R, RLoxError>;
+    fn visit_var_stmt(&mut self, stmt: &Stmt) -> Result<R, RLoxError>;
 }

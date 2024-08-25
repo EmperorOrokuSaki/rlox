@@ -290,8 +290,9 @@ impl Parser {
 
     fn consume(&mut self, token_type: TokenType, message: &str) -> Result<Token, RLoxError> {
         if self.check(&token_type) {
+            let token = self.peek();
             self.advance();
-            return Ok(self.peek());
+            return Ok(token);
         }
         Err(self.parser_error(message))
     }
@@ -348,7 +349,7 @@ impl Parser {
     fn var_declaration(&mut self) -> Result<Stmt, RLoxError> {
         let name : Token = self.consume(TokenType::Identifier, "Expect variable name.")?;
 
-        let mut initializer;
+        let mut initializer= Expr::Literal { value: crate::tokens::Object::Nil }; // Null by default
         if self.match_token(&vec![TokenType::Equal]) {
             initializer = self.expression()?;
         }
@@ -358,7 +359,7 @@ impl Parser {
     }
 
     fn declaration(&mut self) -> Result<Stmt, RLoxError> {
-        let mut response: Result<Stmt, RLoxError> = if self.match_token(&vec![TokenType::Var]) {
+        let response: Result<Stmt, RLoxError> = if self.match_token(&vec![TokenType::Var]) {
             self.var_declaration()
         } else {
             self.statement()
@@ -375,7 +376,8 @@ impl Parser {
         let mut statements = vec![];
         while !self.is_at_end() {
             let response = self.declaration();
-            if response.is_err() {
+            if let Err(err) = response {
+                err.print();
                 continue;
             }
             statements.push(response.unwrap());
