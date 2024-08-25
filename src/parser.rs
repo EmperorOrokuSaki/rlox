@@ -1,5 +1,5 @@
 use crate::{
-    ast::expr::Expr,
+    ast::{expr::Expr, stmt::Stmt},
     errors::{rlox_error, RLoxError},
     tokens::{Token, TokenType},
 };
@@ -324,8 +324,31 @@ impl Parser {
         }
     }
 
-    pub fn parse(&mut self) -> Result<Expr, RLoxError> {
-        self.expression()
+    fn print_statement(&mut self) -> Result<Stmt, RLoxError> {
+        let value = self.expression()?;
+        self.consume(TokenType::Semicolon, "Expect ; after value.")?;
+        Ok(Stmt::Print { expression: value })
+    }
+
+    fn expression_statement(&mut self) -> Result<Stmt, RLoxError> {
+        let value = self.expression()?;
+        self.consume(TokenType::Semicolon, "Expect ; after value.")?;
+        Ok(Stmt::Expression { expression: value })
+    }
+
+    pub fn statement(&mut self) -> Result<Stmt, RLoxError> {
+        if self.match_token(&vec![TokenType::Print]) {
+            return self.print_statement();
+        }
+        self.expression_statement()
+    }
+
+    pub fn parse(&mut self) -> Result<Vec<Stmt>, RLoxError> {
+        let mut statements = vec![];
+        while !self.is_at_end() {
+            statements.push(self.statement()?)
+        }
+        Ok(statements)
     }
 
     /// Resolves binary expressions by taking an operator and a resolver function.

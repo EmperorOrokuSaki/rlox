@@ -6,6 +6,17 @@ pub enum Object {
     String(String), // Represents a string
 }
 
+impl Object {
+    pub fn print(self) {
+        match self {
+            Object::Nil => println!(""),
+            Object::Boolean(boolean) => println!("{}", boolean),
+            Object::Number(number) => println!("{}", number.round()),
+            Object::String(string) => println!("{}", string),
+        }
+    }
+}
+
 #[derive(Debug, Clone)]
 pub struct Token {
     pub token_type: TokenType,

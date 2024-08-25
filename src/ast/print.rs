@@ -1,6 +1,6 @@
 use crate::errors::RLoxError;
 
-use super::{expr::Expr, visitor::Visitor};
+use super::{expr::Expr, visitor::ExprVisitor};
 
 pub struct AstPrinter {}
 
@@ -15,7 +15,7 @@ impl AstPrinter {
     }
 }
 
-impl Visitor<String> for AstPrinter {
+impl ExprVisitor<String> for AstPrinter {
     fn visit_binary_expr(&self, expr: &Expr) -> Result<String, RLoxError> {
         let Expr::Binary {
             left,

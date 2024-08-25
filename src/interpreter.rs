@@ -1,17 +1,23 @@
 use crate::{
+    ast::{stmt::Stmt, visitor::StmtVisitor},
     errors::RLoxError,
     tokens::{Object, Token, TokenType},
 };
 
-use crate::ast::{expr::Expr, visitor::Visitor};
+use crate::ast::{expr::Expr, visitor::ExprVisitor};
 
 pub struct Interpreter {}
 
 impl Interpreter {
-    pub fn interpret(&self, expr: Expr) -> Result<(), RLoxError> {
-        let value: Object = self.evaluate(&expr)?;
-        println!("{:#?}", value);
+    pub fn interpret(&self, stmts: Vec<Stmt>) -> Result<(), RLoxError> {
+        for stmt in stmts {
+            self.execute(stmt)?;
+        }
         Ok(())
+    }
+
+    fn execute(&self, stmt: Stmt) -> Result<(), RLoxError> {
+        stmt.accept(self)
     }
 
     fn check_number_operand(&self, operator: Token, right: Object) -> Result<f64, RLoxError> {
@@ -103,7 +109,26 @@ impl Interpreter {
     }
 }
 
-impl Visitor<Object> for Interpreter {
+impl StmtVisitor<()> for Interpreter {
+    fn visit_expr_stmt(&self, stmt: &Stmt) -> Result<(), RLoxError> {
+        if let Stmt::Expression { expression } = stmt {
+            self.evaluate(&expression)?;
+            return Ok(());
+        }
+        unreachable!()
+    }
+
+    fn visit_print_stmt(&self, stmt: &Stmt) -> Result<(), RLoxError> {
+        if let Stmt::Print { expression } = stmt {
+            let value = self.evaluate(&expression)?;
+            value.print();
+            return Ok(());
+        }
+        unreachable!()
+    }
+}
+
+impl ExprVisitor<Object> for Interpreter {
     fn visit_binary_expr(&self, expr: &Expr) -> Result<Object, RLoxError> {
         if let Expr::Binary {
             left,
@@ -144,9 +169,12 @@ impl Visitor<Object> for Interpreter {
                         if right_number != 0.0 {
                             Some(Ok(left_number / right_number))
                         } else {
-                            Some(Err(RLoxError::InterpreterError(operator.clone(), "Number cannot be divided by zero".to_string())))
+                            Some(Err(RLoxError::InterpreterError(
+                                operator.clone(),
+                                "Number cannot be divided by zero".to_string(),
+                            )))
                         }
-                    },
+                    }
                     TokenType::Star => Some(Ok(left_number * right_number)),
                     TokenType::Plus => Some(Ok(left_number + right_number)),
                     _ => None,

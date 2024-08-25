@@ -3,7 +3,7 @@ use crate::{
     tokens::{Object, Token},
 };
 
-use super::visitor::Visitor;
+use super::visitor::ExprVisitor;
 
 #[derive(Debug)]
 pub enum Expr {
@@ -25,7 +25,7 @@ pub enum Expr {
 }
 
 impl Expr {
-    pub fn accept<R>(&self, visitor: &dyn Visitor<R>) -> Result<R, RLoxError> {
+    pub fn accept<R>(&self, visitor: &dyn ExprVisitor<R>) -> Result<R, RLoxError> {
         match self {
             Expr::Binary { .. } => visitor.visit_binary_expr(self),
             Expr::Literal { .. } => visitor.visit_literal_expr(self),
