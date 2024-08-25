@@ -22,6 +22,9 @@ pub enum Expr {
         operator: Token,
         right: Box<Expr>,
     },
+    Variable {
+        name: Token
+    }
 }
 
 impl Expr {
@@ -31,6 +34,7 @@ impl Expr {
             Expr::Literal { .. } => visitor.visit_literal_expr(self),
             Expr::Grouping { .. } => visitor.visit_grouping_expr(self),
             Expr::Unary { .. } => visitor.visit_unary_expr(self),
+            Expr::Variable { .. } => visitor.visit_variable_expr(self),
         }
     }
 }

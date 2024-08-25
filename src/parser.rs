@@ -282,6 +282,8 @@ impl Parser {
             return Ok(Expr::Grouping {
                 expression: Box::new(expr),
             });
+        } else if self.match_token(&vec![TokenType::Identifier]) {
+            return Ok(Expr::Variable { name: self.previous().unwrap() });
         }
         Err(self.parser_error("Expect expression."))
     }
@@ -336,17 +338,47 @@ impl Parser {
         Ok(Stmt::Expression { expression: value })
     }
 
-    pub fn statement(&mut self) -> Result<Stmt, RLoxError> {
+    fn statement(&mut self) -> Result<Stmt, RLoxError> {
         if self.match_token(&vec![TokenType::Print]) {
             return self.print_statement();
         }
         self.expression_statement()
     }
 
+    fn var_declaration(&mut self) -> Result<Stmt, RLoxError> {
+        let name : Token = self.consume(TokenType::Identifier, "Expect variable name.")?;
+
+        let mut initializer;
+        if self.match_token(&vec![TokenType::Equal]) {
+            initializer = self.expression()?;
+        }
+
+        self.consume(TokenType::Semicolon, "Expect ';' after variable declaration.")?;
+        Ok(Stmt::Var { name, initializer })
+    }
+
+    fn declaration(&mut self) -> Result<Stmt, RLoxError> {
+        let mut response: Result<Stmt, RLoxError> = if self.match_token(&vec![TokenType::Var]) {
+            self.var_declaration()
+        } else {
+            self.statement()
+        };
+
+        if response.is_err() {
+            self.synchronize();
+        }
+
+        response
+    }
+
     pub fn parse(&mut self) -> Result<Vec<Stmt>, RLoxError> {
         let mut statements = vec![];
         while !self.is_at_end() {
-            statements.push(self.statement()?)
+            let response = self.declaration();
+            if response.is_err() {
+                continue;
+            }
+            statements.push(response.unwrap());
         }
         Ok(statements)
     }

@@ -6,6 +6,7 @@ mod parser;
 mod rlox;
 mod scanner;
 mod tokens;
+mod environment;
 
 use anyhow::Result;
 use clap::Parser;

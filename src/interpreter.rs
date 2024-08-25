@@ -126,6 +126,10 @@ impl StmtVisitor<()> for Interpreter {
         }
         unreachable!()
     }
+    
+    fn visit_var_stmt(&self, stmt: &Stmt) -> Result<(), RLoxError> {
+        todo!()
+    }
 }
 
 impl ExprVisitor<Object> for Interpreter {
@@ -245,5 +249,9 @@ impl ExprVisitor<Object> for Interpreter {
             };
         }
         panic!("Expected grouping, got other value")
+    }
+    
+    fn visit_variable_expr(&self, expr: &Expr) -> Result<Object, RLoxError> {
+        todo!()
     }
 }
