@@ -1,5 +1,4 @@
 use std::{
-    collections::HashMap,
     fs,
     io::{self, Write},
 };
@@ -9,7 +8,6 @@ use clap::Parser;
 
 use crate::{
     environment::Environment, errors::RLoxError, interpreter::Interpreter, scanner::Scanner,
-    tokens::Object,
 };
 
 #[derive(Parser)]
@@ -55,7 +53,7 @@ impl RLox {
                 break;
             }
 
-            Self::run(input);
+            let _ = Self::run(input); // todo
         }
         Ok(())
     }

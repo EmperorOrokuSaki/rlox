@@ -1,6 +1,6 @@
 use crate::{
     ast::{expr::Expr, stmt::Stmt},
-    errors::{rlox_error, RLoxError},
+    errors::RLoxError,
     tokens::{Token, TokenType},
 };
 
@@ -283,7 +283,9 @@ impl Parser {
                 expression: Box::new(expr),
             });
         } else if self.match_token(&vec![TokenType::Identifier]) {
-            return Ok(Expr::Variable { name: self.previous().unwrap() });
+            return Ok(Expr::Variable {
+                name: self.previous().unwrap(),
+            });
         }
         Err(self.parser_error("Expect expression."))
     }
@@ -347,14 +349,19 @@ impl Parser {
     }
 
     fn var_declaration(&mut self) -> Result<Stmt, RLoxError> {
-        let name : Token = self.consume(TokenType::Identifier, "Expect variable name.")?;
+        let name: Token = self.consume(TokenType::Identifier, "Expect variable name.")?;
 
-        let mut initializer= Expr::Literal { value: crate::tokens::Object::Nil }; // Null by default
+        let mut initializer = Expr::Literal {
+            value: crate::tokens::Object::Nil,
+        }; // Null by default
         if self.match_token(&vec![TokenType::Equal]) {
             initializer = self.expression()?;
         }
 
-        self.consume(TokenType::Semicolon, "Expect ';' after variable declaration.")?;
+        self.consume(
+            TokenType::Semicolon,
+            "Expect ';' after variable declaration.",
+        )?;
         Ok(Stmt::Var { name, initializer })
     }
 

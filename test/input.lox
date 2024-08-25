@@ -1,3 +1,26 @@
-var a = 5;
-var b = 1;
-print a + a;
+var ascii = "
+         __                       __                        __                       __               
+   _____/ /   ____  _  __   _____/ /   ____  _  __    _____/ /   ____  _  __   _____/ /   ____  _  __
+  / ___/ /   / __ \| |/_/  / ___/ /   / __ \| |/_/   / ___/ /   / __ \| |/_/  / ___/ /   / __ \| |/_/
+ / /  / /___/ /_/ />  <   / /  / /___/ /_/ />  <    / /  / /___/ /_/ />  <   / /  / /___/ /_/ />  <  
+/_/  /_____/\____/_/|_|  /_/  /_____/\____/_/|_|   /_/  /_____/\____/_/|_|  /_/  /_____/\____/_/|_|  
+
+";
+
+print ascii;
+
+// single line comments are supported
+print "ASCII art!
+";
+print "Basic arithmetics: 5 + 6 * 9 (22 - 987)
+";
+var result = 5 + 6 * 9  / (22 - 987);
+print result;
+/* multi line comments are supported tooooo
+*/
+print "
+multi
+line
+strings
+and
+print";

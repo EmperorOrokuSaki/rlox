@@ -1,18 +1,12 @@
-use crate::{
-    errors::RLoxError,
-    tokens::{Object, Token},
-};
+use crate::{errors::RLoxError, tokens::Token};
 
-use super::{
-    expr::Expr,
-    visitor::{ExprVisitor, StmtVisitor},
-};
+use super::{expr::Expr, visitor::StmtVisitor};
 
 #[derive(Debug)]
 pub enum Stmt {
     Expression { expression: Expr },
     Print { expression: Expr },
-    Var {name: Token, initializer: Expr}
+    Var { name: Token, initializer: Expr },
 }
 
 impl Stmt {
