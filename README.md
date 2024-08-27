@@ -17,7 +17,3 @@ Options:
   -h, --help         Print help
   -V, --version      Print version
 ```
-
-## Current progress
-
--Chapter 6.3.1
